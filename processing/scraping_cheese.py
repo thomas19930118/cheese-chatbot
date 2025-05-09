@@ -1,4 +1,5 @@
 import requests
+import re
 from bs4 import BeautifulSoup
 import time  # Add this for delays between requests
 
@@ -20,22 +21,22 @@ def get_details(url):
     cheese_data = {
         'brand': '',
         'category': '',
-        'SKU': '',
-        'UPC': '',
+        'SKU': 0,
+        'UPC': 0,
         'Warning': '',
         'CASE': {
-            'count': '',
+            'count': 0,
             'dimension': '',
-            'weight': '',
-            'price': '',
-            'price_per_lb': ''
+            'weight': 0,
+            'price': 0,
+            'price_per_lb': 0
         },
         'EACH': {
             'count': '',
             'dimension': '',
-            'weight': '',
-            'price': '',
-            'price_per_lb': ''
+            'weight': 0,
+            'price': 0,
+            'price_per_lb': 0
         },
         'related_items': []
     }
@@ -54,14 +55,14 @@ def get_details(url):
     sku_upc_elements = soup_details.find_all('p', class_='chakra-text')
     for element in sku_upc_elements:
         if 'SKU:' in element.text:
-            cheese_data['SKU'] = element.find('b').text.strip()
+            cheese_data['SKU'] = int(element.find('b').text.strip().split(',')[0])
         elif 'UPC:' in element.text:
-            cheese_data['UPC'] = element.find('b').text.strip()
+            cheese_data['UPC'] = int(element.find('b').text.strip().split(',')[0])
     
     # Get Warning (Proposition 65)
     warning_text = soup_details.findAll('p', class_='chakra-text css-dw5ttn')
     if warning_text:
-        cheese_data['Warning'] = warning_text[1].text.strip()
+        cheese_data['Warning'] = warning_text[1].text.strip().removeprefix("Warning: ")
     # Get Case and Each information from table
     table = soup_details.find_all('table', class_='chakra-table css-5605sr')
     if table:
@@ -78,45 +79,45 @@ def get_details(url):
                 each_text = cells[1].text.strip()
                 
                 if "Eaches" in case_text or "Item" in each_text:
-                    cheese_data['CASE']['count'] = case_text
+                    cheese_data['CASE']['count'] = int(''.join(filter(str.isdigit, case_text)))
                     cheese_data['EACH']['count'] = each_text
                 elif any(x in case_text for x in ['L', 'W', 'H']):  # Dimensions row
                     cheese_data['CASE']['dimension'] = case_text
                     cheese_data['EACH']['dimension'] = each_text
                 elif "lbs" in case_text:  # Weight row
-                    cheese_data['CASE']['weight'] = case_text
-                    cheese_data['EACH']['weight'] = each_text
+                    cheese_data['CASE']['weight'] = float(re.findall(r"\d+(?:\.\d+)?", case_text)[0])
+                    cheese_data['EACH']['weight'] = float(re.findall(r"\d+(?:\.\d+)?", each_text)[0])
             else:
                 each_text = cells[0].text.strip()
                 
                 if "Item" in each_text:
-                    cheese_data['CASE']['count'] = "1 Eaches"
+                    cheese_data['CASE']['count'] = 1
                     cheese_data['EACH']['count'] = each_text
                 elif any(x in each_text for x in ['L', 'W', 'H']):  # Dimensions row
                     cheese_data['CASE']['dimension'] = each_text
                     cheese_data['EACH']['dimension'] = each_text
                 elif "lbs" in each_text:  # Weight row
-                    cheese_data['CASE']['weight'] = each_text
-                    cheese_data['EACH']['weight'] = each_text
+                    cheese_data['CASE']['weight'] = float(re.findall(r"\d+(?:\.\d+)?", each_text)[0])
+                    cheese_data['EACH']['weight'] = float(re.findall(r"\d+(?:\.\d+)?", each_text)[0])
         
     # Get prices and price per lb
     price = soup_details.find_all('b', class_='chakra-text css-0', string=lambda x: x and '$' in x)
 
     if len(price) >= 2:
-        cheese_data['CASE']['price'] = price[0].text.strip()
-        cheese_data['EACH']['price'] = price[1].text.strip()
+        cheese_data['CASE']['price'] = float(re.findall(r"\d+(?:\.\d+)?", price[0].text.strip())[0])
+        cheese_data['EACH']['price'] = float(re.findall(r"\d+(?:\.\d+)?", price[1].text.strip())[0])
     else:
-        cheese_data['CASE']['price'] = price[0].text.strip()
-        cheese_data['EACH']['price'] = price[0].text.strip()
+        cheese_data['CASE']['price'] = float(re.findall(r"\d+(?:\.\d+)?", price[0].text.strip())[0])
+        cheese_data['EACH']['price'] = float(re.findall(r"\d+(?:\.\d+)?", price[0].text.strip())[0])
     
     price_per_lb = soup_details.find_all('span', class_='chakra-badge css-1mwp5d1')
 
     if len(price_per_lb) >= 2:
-        cheese_data['CASE']['price_per_lb'] = price_per_lb[0].text.strip()
-        cheese_data['EACH']['price_per_lb'] = price_per_lb[1].text.strip()
+        cheese_data['CASE']['price_per_lb'] = float(re.findall(r"\d+(?:\.\d+)?", price_per_lb[0].text.strip())[0])
+        cheese_data['EACH']['price_per_lb'] = float(re.findall(r"\d+(?:\.\d+)?", price_per_lb[1].text.strip())[0])
     elif len(price_per_lb) == 1:
-        cheese_data['CASE']['price_per_lb'] = price_per_lb[0].text.strip()
-        cheese_data['EACH']['price_per_lb'] = price_per_lb[0].text.strip()
+        cheese_data['CASE']['price_per_lb'] = float(re.findall(r"\d+(?:\.\d+)?", price_per_lb[0].text.strip())[0])
+        cheese_data['EACH']['price_per_lb'] = float(re.findall(r"\d+(?:\.\d+)?", price_per_lb[0].text.strip())[0])
     else:
         cheese_data['CASE']['price_per_lb'] = "None"
         cheese_data['EACH']['price_per_lb'] = "None"
@@ -166,22 +167,22 @@ def parse_products(soup):
             'name': '',
             'brand': '',
             'category': '',
-            'SKU': '',
-            'UPC': '',
+            'SKU': 0,
+            'UPC': 0,
             'Warning': '',
             'CASE': {
-                'count': '',
+                'count': 0,
                 'dimension': '',
-                'weight': '',
-                'price': '',
-                'price_per_lb': ''
+                'weight': 0,
+                'price': 0,
+                'price_per_lb': 0
             },
             'EACH': {
                 'count': '',
                 'dimension': '',
-                'weight': '',
-                'price': '',
-                'price_per_lb': ''
+                'weight': 0,
+                'price': 0,
+                'price_per_lb': 0
             },
             'related_items': []
         }
@@ -224,7 +225,7 @@ def scrape_page(page_num):
         print(f"Error on page {page_num}: {str(e)}")
         return False
 
-def main():
+def scrape_cheese():
     # We know there are 5 pages
     total_pages = 5
     for page_num in range(1, total_pages + 1):
@@ -242,7 +243,7 @@ def main():
     
     # Save results to a file
     import json
-    with open('cheese_products.json', 'w', encoding='utf-8') as f:
+    with open('./data/cheese_products.json', 'w', encoding='utf-8') as f:
         json.dump(PRODUCTS, f, ensure_ascii=False, indent=2)
     print("Results saved to cheese_products.json")
     
@@ -252,4 +253,4 @@ def main():
         print(json.dumps(prod, indent=2))
 
 if __name__ == "__main__":
-    main()
+    scrape_cheese()

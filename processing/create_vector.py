@@ -86,9 +86,9 @@ def create_embeddings_and_store(cheese_data, index):
         print(f"An error occurred in create_embeddings_and_store: {e}")
         raise
 
-def main():
+def create_vector():
     # First make sure we have the cheese data
-    cheese_data = load_cheese_data('cheese_products.json')
+    cheese_data = load_cheese_data('./data/cheese_products.json')
     if not cheese_data:
         print("Please run your cheese scraping script first to create cheese_data.json")
         return
@@ -99,14 +99,12 @@ def main():
         return
     
     # Check if vectors need to be created and stored
-    user_input = input("Do you want to (re)create and store vectors? (yes/no): ").strip().lower()
-    if user_input == 'yes':
-        vector_store = create_embeddings_and_store(cheese_data, index)
-        if not vector_store:
-            return
-        print("Setup completed successfully!")
+    vector_store = create_embeddings_and_store(cheese_data, index)
+    if not vector_store:
+        return
+    print("Setup completed successfully!")
 
 if __name__ == "__main__":
-    main()
+    create_vector()
 
 
