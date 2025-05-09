@@ -109,7 +109,7 @@ def chatbot(user_query, index, st):
             if response.generate_query:
                 query_results = index.query(
                     vector=query_embedding,
-                    top_k=30,
+                    top_k=98,
                     include_metadata=True,
                     namespace="cheeseData",
                     # filter={
