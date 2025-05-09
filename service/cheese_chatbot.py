@@ -87,7 +87,7 @@ def chatbot(user_query, index, st):
         - $or: Logical OR
 
         Always return properly formatted JSON for metadata_query. Keep filters simple and avoid nesting too deeply.
-        - If the question is superative adjective, you need to set the relevant query threshold for your self and generate the query but it becomes have data in the metadata(price:smallest:5, biggest:180).
+        - If the question is superative adjective, you need to set the relevant query threshold for your self and generate the query but it becomes have data in the metadata.
         - If the question is about the cheese, you need to generate the query for each item (price: each_price, weight: each_weight, price per pound: each_price_per_lb).
         """
 
