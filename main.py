@@ -110,7 +110,7 @@ def handle_reload_confirm():
 
 # Add the reload button to the sidebar header
 if not st.session_state.show_confirm_reload:
-    if st.sidebar.button('🔄 Reload Cheese Data', key='reload_data'):
+    if st.sidebar.button('🔄 Reload Cheese Database', key='reload_data'):
         st.session_state.show_confirm_reload = True
         st.rerun()
 

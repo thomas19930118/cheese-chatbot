@@ -55,6 +55,17 @@
     color: #e2e8f0 !important;
 }
 
+/* Remove the small dark rounded input outline */
+.stChatInput:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.stChatInput textarea:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
 /* Style for user messages */
 .stChatMessage[data-testid="user-message"] {
     background: linear-gradient(145deg, #3b82f6, #1d4ed8);

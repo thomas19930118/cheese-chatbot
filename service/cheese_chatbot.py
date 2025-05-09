@@ -45,14 +45,14 @@ def chatbot(user_query, index, st):
         VALID FILTER EXAMPLES:
         1. Single condition:
         {"brand": {"$eq": "Kraft"}}
-        {"case_price": {"$lt": 50.00}}
+        {"each_price": {"$lt": 50.00}}
         {"each_weight": {"$gte": 5}}
 
         2. Multiple conditions using AND:
         {
             "$and": [
             {"brand": {"$eq": "Kraft"}},
-            {"case_price": {"$lt": 50.00}}
+            {"each_price": {"$lt": 50.00}}
             ]
         }
 
@@ -65,7 +65,7 @@ def chatbot(user_query, index, st):
         }
 
         4. Range queries:
-        {"case_price": {"$gte": 20, "$lte": 50}}
+        {"each_price": {"$gte": 20, "$lte": 50}}
 
         INVALID FILTERS TO AVOID:
         ❌ {"brand": ["Kraft", "Sargento"]}  # Don't use direct arrays
@@ -88,43 +88,41 @@ def chatbot(user_query, index, st):
         Always return properly formatted JSON for metadata_query. Keep filters simple and avoid nesting too deeply.
         """
 
-        # completion = openai.beta.chat.completions.parse(
-        #     model="gpt-4.1",
-        #     messages=[
-        #         {"role": "system", "content": system_message},
-        #         {"role": "user", "content": user_query}
-        #     ],
-        #     response_format=AtHearthResponse
-        # )
+        completion = openai.beta.chat.completions.parse(
+            model="gpt-4.1",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_query}
+            ],
+            response_format=AtHearthResponse
+        )
         
-        # response = completion.choices[0].message.parsed
-        # print(response.metadata_query)
+        response = completion.choices[0].message.parsed
+        print(response.metadata_query)
         query_embedding = query_response.data[0].embedding
-        response = None
+        # response = None
         # Query Pinecone
         try:
             if response.generate_query:
                 query_results = index.query(
                     vector=query_embedding,
-                    top_k=30,
+                    top_k=5,
                     include_metadata=True,
                     namespace="cheeseData",
-                    # filter={
-                    #     "metadata.category": response.metadata_query
-                    # }
                     filter=response.metadata_query
+                    # filter=response.metadata_query
                 )
             else:
                 query_results = index.query(
                     vector=query_embedding,
-                    top_k=30,
+                    top_k=5,
                         include_metadata=True,
                         namespace="cheeseData",
                     )
         except Exception as e:
             query_results = index.query(
                 vector=query_embedding,
-                top_k=30,
+                top_k=5,
                     include_metadata=True,
                     namespace="cheeseData",
                 )
@@ -139,7 +137,7 @@ def chatbot(user_query, index, st):
         # Create prompt for OpenAI
         prompt = f"""You are a helpful cheese expert assistant. Use the following cheese product information to answer the question.
 - So, for the question, you need to find the cheese that the user is asking about. And you need to show the images for the cheese using the image url. 
-- Also you don't need to show all data of the cheese. Show the Description, image, Category, Each Price, Each Price per pound and the url of the cheese.
+- Also you don't need to show all data of the cheese. Show the Description, image, Category, Case and Each Price, Each Price per pound and the url of the cheese. And in the url of the cheese, unnecessary strign '-' or '---' and so on and added so you need to remove it.
 - The unit of the price is dollar and the unit of the price per pound is dollar per pound and the unit of the weight is pound.
 - Please provide a helpful, informative response based on the cheese products shown above. If the question cannot be answered based on the given context, please say so.
 - And When a greeting such as hi and hello or general conversation comes in as a question, you need to answer with a greeting but not show the cheese data.
@@ -148,6 +146,7 @@ def chatbot(user_query, index, st):
 - Be concise, but provide all relevant details found in the context.
 - Do not repeat yourself or include unnecessary sentences.
 - Use bullet points or lists if the user asks for comparisons or recommendations.
+- Answer the pros and cons of  each cheese briefly.
 - If the user asks for a specific cheese, provide the details of the cheese.
 - If the user asks for a general cheese recommendation, consider the cheese's flavor, texture, and aroma.
 - Maintain a friendly and knowledgeable tone.
@@ -156,8 +155,9 @@ def chatbot(user_query, index, st):
 - Briefly explain why you made a recommendation, using facts from the context (e.g., "I recommend Mozzarella because it is described here as mild and melts well.")
 - Suggest similar cheeses only if they are present in the context.
 - If the user's preferences are not fully met by any product, recommend the closest option found.
-- If the number of cheese products is too much, reduce you self from 3 products to 5 products with the most suitable products and if user want to see more, you need to show all products.
+- If the number of cheese products is too much, reduce you self from 2 products to 3 products with the most suitable products and if user want to see more, you need to show all products.
 - When output, Correct the writing of space between words.
+- It there is no cheese data, you need to answer with "I'm sorry, There is no cheese data for that question."
 - Answer the question based on the context and previous messages.  
 Context:
 {context}
