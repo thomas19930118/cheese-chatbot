@@ -147,14 +147,23 @@ def load_css():
     with open("static/style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
-    # Load JavaScript
+    # Load JavaScript files
     with open("static/menu_handler.js") as f:
-        st.components.v1.html(
-            f"""
-            <script>{f.read()}</script>
-            """,
-            height=0,
-        )
+        menu_js = f.read()
+    
+    with open("static/auto_scroll.js") as f:
+        scroll_js = f.read()
+    
+    # Combine and inject JavaScript
+    st.components.v1.html(
+        f"""
+        <script>
+            {menu_js}
+            {scroll_js}
+        </script>
+        """,
+        height=0,
+    )
 
 # Load CSS at the start
 load_css()
@@ -171,7 +180,7 @@ def initialize_pinecone():
 def main():
     st.markdown("""
         <div class='header-container'>
-            <h1 class='main-title'>🧀 Cheese Assistant Chatbot 🧀</h1>
+            <h1 class='main-title'>🧀 <span class='gradient-text'>Cheese Assistant Chatbot</span> 🧀</h1>
             <div class='welcome-message'>
                 <span style='font-size: 24px;'>👋</span> 
                 Welcome to your personal cheese expert! I'm here to help you discover and learn about our amazing selection of cheeses.

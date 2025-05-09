@@ -1,4 +1,5 @@
 import os
+import json
 import openai
 from pinecone import Pinecone, ServerlessSpec
 from langchain_community.chat_models import ChatOpenAI
@@ -34,7 +35,7 @@ def chatbot(user_query, index, st):
         - brand
         - KPU
         - UPC
-        - case_weight(weight of case, example: 10 lbs)
+        - case_weight(weight of case, example: 10 lbs) 
         - case_count(count of case, example: 2 Eaches)
         - each_weight(weight of each, example: 5 LBS)
         - case_price(price of case, example: $49.06)
@@ -45,14 +46,14 @@ def chatbot(user_query, index, st):
         VALID FILTER EXAMPLES:
         1. Single condition:
         {"brand": {"$eq": "Kraft"}}
-        {"each_price": {"$lt": 50.00}}
-        {"each_weight": {"$gte": 5}}
+        {"case_price": {"$lt": 50.00}}
+        {"case_weight": {"$gte": 5}}
 
         2. Multiple conditions using AND:
         {
             "$and": [
             {"brand": {"$eq": "Kraft"}},
-            {"each_price": {"$lt": 50.00}}
+            {"case_price": {"$lt": 50.00}}
             ]
         }
 
@@ -86,6 +87,8 @@ def chatbot(user_query, index, st):
         - $or: Logical OR
 
         Always return properly formatted JSON for metadata_query. Keep filters simple and avoid nesting too deeply.
+        - If the question is superative adjective, you need to set the relevant query threshold for your self and generate the query but it becomes have data in the metadata(price:smallest:5, biggest:180).
+        - If the question is about the cheese, you need to generate the query for each item (price: each_price, weight: each_weight, price per pound: each_price_per_lb).
         """
 
         completion = openai.beta.chat.completions.parse(
@@ -106,27 +109,30 @@ def chatbot(user_query, index, st):
             if response.generate_query:
                 query_results = index.query(
                     vector=query_embedding,
-                    top_k=5,
+                    top_k=30,
                     include_metadata=True,
                     namespace="cheeseData",
-                    filter=response.metadata_query
-                    # filter=response.metadata_query
+                    # filter={
+                    #     "metadata.category": response.metadata_query
+                    # }
+                    filter=json.loads(response.metadata_query)
+            
                 )
             else:
                 query_results = index.query(
                     vector=query_embedding,
-                    top_k=5,
-                        include_metadata=True,
-                        namespace="cheeseData",
-                    )
-        except Exception as e:
-            query_results = index.query(
-                vector=query_embedding,
-                top_k=5,
+                    top_k=30,
                     include_metadata=True,
                     namespace="cheeseData",
+                    )
+        except Exception as e:
+            print(e)
+            query_results = index.query(
+                vector=query_embedding,
+                top_k=30,
+                include_metadata=True,
+                namespace="cheeseData",
                 )
-
         # Format context from the results
         context = ""
         for match in query_results['matches']:
@@ -156,7 +162,7 @@ def chatbot(user_query, index, st):
 - Briefly explain why you made a recommendation, using facts from the context (e.g., "I recommend Mozzarella because it is described here as mild and melts well.")
 - Suggest similar cheeses only if they are present in the context.
 - If the user's preferences are not fully met by any product, recommend the closest option found.
-- If the number of cheese products is too much, reduce you self from 2 products to 3 products with the most suitable products and if user want to see more, you need to show all products.
+- Usually show 3 cheese. If the number of cheese products is too much, reduce you self from 3 products to 5 products with the most suitable products and if user want to see more, you need to show all products.
 - When output, Correct the writing of space between words.
 - It there is no cheese data, you need to answer with "I'm sorry, There is no cheese data for that question."
 - Answer the question based on the context and previous messages.  
