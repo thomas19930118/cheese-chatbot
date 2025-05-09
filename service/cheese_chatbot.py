@@ -115,7 +115,7 @@ def chatbot(user_query, index, st):
                     # filter={
                     #     "metadata.category": response.metadata_query
                     # }
-                    filter=json.loads(response.metadata_query)
+                    # filter=json.loads(response.metadata_query)
             
                 )
             else:
