@@ -162,7 +162,6 @@ def chatbot(user_query, index, st):
 - Briefly explain why you made a recommendation, using facts from the context (e.g., "I recommend Mozzarella because it is described here as mild and melts well.")
 - Suggest similar cheeses only if they are present in the context.
 - If the user's preferences are not fully met by any product, recommend the closest option found.
-- Usually show 3 cheese. If the number of cheese products is too much, reduce you self from 3 products to 5 products with the most suitable products and if user want to see more, you need to show all products.
 - When output, Correct the writing of space between words.
 - It there is no cheese data, you need to answer with "I'm sorry, There is no cheese data for that question."
 - Answer the question based on the context and previous messages.  
